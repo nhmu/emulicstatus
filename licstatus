@@ -1,0 +1,235 @@
+#!/usr/bin/perl -w
+#
+# Proof-of-concept for texlicstatus + rrdtool
+#
+# Author: Will Aoki <waoki@umnh.utah.edu>
+#
+
+my %defaults = (
+    emupath => '/opt/emu/emutest'
+   ,mode => 'acquire'
+  );
+
+package App::EMuLicStatus;
+__PACKAGE__->main(@ARGV) unless caller();
+
+use strict;
+use RRDTool::OO;
+use Getopt::Long qw / GetOptionsFromArray :config no_ignore_case /;
+use Data::Dumper;
+
+
+sub printhelp {
+  print << "EOF";
+Logs EMu license-in-use count to an RRD file.
+
+Usage: $0 --rrdfile <path to file> [OPTIONS]
+
+  --rrdfile <file>
+
+    Specifies an RRDtool file to log to. If file does not exist, it must
+    be created with --init.
+
+MODE SELECTION
+  --mode (acquire|graph|init)
+
+    Mode selection. If not specified, defaults to ${defaults{'mode'}}
+
+DATA ACQUISITION MODE
+
+  --emupath <path>
+
+    Path to EMu installation. If not specified, defaults
+    to ${defaults{'emupath'}}
+
+INITIALIZATION MODE
+
+  Initializes RRD file. Must be run before acquisition mode will work.
+
+GRAPHING MODE
+
+  --graph-to <file>
+
+EOF
+}
+
+sub parse_args {
+  my $config = shift;
+  die unless (ref($config) eq 'HASH');
+  my @args = @_;
+
+  GetOptionsFromArray(\@args,
+    ,'rrdfile=s'        => \$config->{'rrdfile'}
+    ,'emupath=s'        => \$config->{'emupath'}
+    ,'mode=s'           => \$config->{'mode'}
+    ,'graph-to=s'       => \$config->{'graphto'}
+  ) or do { printhelp(); return 0; };
+
+  unless ($config->{'rrdfile'}) {
+    print "Must specify an RRD file\n";
+    printhelp();
+    return 0;
+  }
+
+  if ($config->{'mode'} eq 'acquire' ) {
+    unless (-f ($config->{'emupath'} . '/bin/emurun')) {
+      print "No EMu installation at " . $config->{'emupath'} . "\n";
+      printhelp();
+      return 0;
+    }
+  } elsif ($config->{'mode'} eq 'graph') {
+    unless (defined($config->{'graphto'})) {
+      print "Output file not specified\n";
+      printhelp();
+      return 0;
+    }
+  } elsif ($config->{'mode'} ne 'init') {
+    print "Valid mode not defined!\n";
+    printhelp();
+    return 0;
+  }
+
+  return 1;
+}
+
+# my $rrd = open_rrd($path, $is_initing)
+sub open_rrd {
+  my $path = shift;
+  my $is_initing = shift;
+
+  my $r = RRDTool::OO->new(file => $path);
+
+  # initialize if requested
+  if ($is_initing) {
+    $r->create(
+               data_source => { name => 'users'
+                               ,type => 'GAUGE'
+                              }
+              ,data_source => { name => 'licenses'
+                               ,type => 'GAUGE'
+                              }
+              ,data_source => { name => 'imu'
+                               ,type => 'GAUGE'
+                              }
+              ,archive => { cfunc => 'AVERAGE'
+                           ,cpoints => 3
+                           ,rows => 60480 * 14
+                          }
+              ,archive => { cfunc => 'MIN'
+                           ,cpoints => 3
+                           ,rows => 60480 * 14
+                          }
+              ,archive => { cfunc => 'MAX'
+                           ,cpoints => 3
+                           ,rows => 60480 * 14
+                          }
+              ,step => 300
+              );
+  }
+
+  return $r;
+}
+
+sub update_rrd {
+  my $rrd = shift;
+  # could just pass @_ but this is clearer
+  my $active = shift;
+  my $licensed = shift;
+  my $imu = shift;
+
+  die "No RRD handle" unless $rrd;
+
+  if (defined($active) && defined($licensed) && defined($imu)) {
+    $rrd->update(time => time(), values => [$active, $licensed, $imu]);
+  }
+}
+
+sub texstatus {
+  my $emurun = shift;
+  $emurun .= '/bin/emurun';
+  my %stats;
+
+  die "No emurun" unless (-x $emurun);
+
+  my $in;
+  open($in, '-|', $emurun, 'texlicstatus') or die "Unable to emurun texlicstatus";
+
+  my $imucnt = 0;
+  while (my $l = <$in>) {
+    chomp($l);
+    if ($l =~ /Maximum users:\s*([0-9]+)/) {
+      $stats{'licensed_users'} = $1;
+    } elsif ($l =~ /Current users:\s*([0-9]+)/) {
+      $stats{'active_users'} = $1;
+    } elsif ($l =~ /emu\s+[0-9]+\s+imu\/[0-9]+\/[0-9]+/) {
+      $imucnt++;
+    }
+  }
+  close $in;
+
+  $stats{'imu_sessions'} = $imucnt;
+
+  if (defined($stats{'licensed_users'}) && defined($stats{'active_users'})) {
+    return \%stats;
+  } else {
+    return undef;
+  }
+
+}
+
+
+sub main {
+  my %config = %defaults;
+  shift @_; # called as object method
+  parse_args(\%config, @_) or exit 1;
+
+  my $rrd = open_rrd($config{'rrdfile'}, $config{'mode'} eq 'init');
+
+  if ($config{'mode'} eq 'acquire') {
+    my $emustats = texstatus($config{'emupath'});
+
+    if ($emustats) {
+      update_rrd($rrd, $emustats->{'active_users'}, $emustats->{'licensed_users'}, $emustats->{'imu_sessions'});
+      exit 0;
+    } else {
+      print STDERR "Unable to get EMu status\n";
+      exit 1;
+    }
+  } elsif ($config{'mode'} eq 'graph') {
+    $rrd->graphv(image => $config{'graphto'}
+                ,draw => {
+                           name => 'Licenses'
+                          ,color => '0000FF'
+                          ,dsname => 'licenses'
+                          ,cfunc => 'MAX'
+                          ,legend => 'Owned Licenses'
+                         }
+                ,draw => {
+                           name => 'Active users'
+                          ,color => 'FF0000'
+                          ,dsname => 'users'
+                          ,cfunc => 'MAX'
+                          ,type => 'area'
+                          ,legend => 'Licenses in use'
+                          }
+                 ,draw => {
+                           name => 'IMu sessions'
+                          ,color => 'A000A0'
+                          ,dsname => 'imu'
+                          ,cfunc => 'MAX'
+                          ,type => 'area'
+                          ,legend => 'IMu sessions'
+                          }
+                ,vertical_label => 'Users'
+                #,start => time() - 60480 * 8
+                #,end => time()
+               );
+  } elsif ($config{'mode'} eq 'init') {
+    # No special code actually needed because of second arg to open_rrd
+    # Assume success
+    exit 0;
+  }
+
+  exit 1;
+}
+
