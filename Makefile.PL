@@ -12,8 +12,8 @@ WriteMakefile(
                       'RRDTool::OO' => 0,
                      },
   TEST_REQUIRES   => {
-                      'Test::Exception' => 0
-                      'Test::Output' => 0
+                      'Test::Exception' => 0,
+                      'Test::Output' => 0,
                      },
   EXE_FILES       => ['licstatus'],
 );
