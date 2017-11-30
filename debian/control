@@ -2,7 +2,7 @@ Source: emulicstatus
 Section: misc
 Priority: optional
 Maintainer: Will Aoki <waoki@umnh.utah.edu>
-Build-Depends: debhelper (>= 10.0.0), perl, libtest-output-perl, libtest-exception-perl
+Build-Depends: debhelper (>= 9.0.0), perl, libtest-output-perl, libtest-exception-perl, librrdtool-oo-perl
 Standards-Version: 3.9.3
 Vcs-Git: https://github.com/waoki/emulicstatus.git
 
@@ -13,4 +13,4 @@ Depends: ${misc:Depends}, ${perl:Depends}, librrdtool-oo-perl
 Breaks: apt (<<0.7.25.1)
 Description: Log and graph EMu license usage
  Logs EMu license count every five minutes in an RRD. Generates pretty
- graphs suitable for web display.
+ graphs suitable for web display.1
