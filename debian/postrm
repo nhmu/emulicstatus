@@ -1,0 +1,7 @@
+#!/bin/sh
+
+if [ $1 = 'purge' ]; then
+  rm -f /var/spool/emulicstatus/emu.rrd
+  rmdir --ignore-fail-on-non-empty /var/spool/emulicstatus
+fi
+
