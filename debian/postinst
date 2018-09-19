@@ -1,0 +1,9 @@
+#!/bin/sh
+
+if [ $1 = "configure" ]; then
+  if [ ! -f /var/spool/emulicstatus/emu.rrd ]; then
+    echo Initializing RRD
+    licstatus --mode init --rrdfile /var/spool/emulicstatus/emu.rrd
+  fi
+fi
+
