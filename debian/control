@@ -13,4 +13,4 @@ Depends: ${misc:Depends}, ${perl:Depends}, librrdtool-oo-perl
 Breaks: apt (<<0.7.25.1)
 Description: Log and graph EMu license usage
  Logs EMu license count every five minutes in an RRD. Generates pretty
- graphs suitable for web display.1
+ graphs suitable for web display.
