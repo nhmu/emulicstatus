@@ -1,6 +1,7 @@
 emulicstatus (0.3) UNRELEASED; urgency=medium
 
   * Initialize empty RRD, and clean it up on purge 
+  * Added documentation
 
  -- Will Aoki <waoki@umnh.utah.edu>  Wed, 19 Sep 2018 10:13:53 -0600
 
