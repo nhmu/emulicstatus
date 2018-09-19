@@ -1,4 +1,4 @@
-emulicstatus (0.3) UNRELEASED; urgency=medium
+emulicstatus (0.3) unstable; urgency=medium
 
   * Initialize empty RRD, and clean it up on purge 
   * Added documentation
