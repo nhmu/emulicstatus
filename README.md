@@ -1,6 +1,6 @@
 # EMu license charting tool
 
-This tool saves EMu license count every five minutes in an RRD and optionally
+This tool saves EMu license usage information in an RRD and optionally
 generates pretty graphs suitable for web display.
 
 Out of the box, the tool's cron job will log EMu license status every five
