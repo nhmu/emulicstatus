@@ -28,7 +28,7 @@ Usage: $0 --rrdfile <path to file> [OPTIONS]
   --rrdfile <file>
 
     Specifies an RRDtool file to log to. If file does not exist, it must
-    be created with --init.
+    be created with '--mode init'.
 
 MODE SELECTION
   --mode (acquire|graph|init)
