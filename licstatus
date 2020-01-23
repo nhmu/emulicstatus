@@ -8,6 +8,7 @@
 my %defaults = (
     emupath => '/opt/emu/emutest'
    ,mode => 'acquire'
+   ,graphdays => 1
   );
 
 package App::EMuLicStatus;
@@ -50,6 +51,12 @@ GRAPHING MODE
 
   --graph-to <file>
 
+    Path to file to output graph to
+
+  --graph-days <days>
+
+    Number of days to include in graph
+
 EOF
 }
 
@@ -63,6 +70,7 @@ sub parse_args {
     ,'emupath=s'        => \$config->{'emupath'}
     ,'mode=s'           => \$config->{'mode'}
     ,'graph-to=s'       => \$config->{'graphto'}
+    ,'graph-days=f'     => \$config->{'graphdays'}
   ) or do { printhelp(); return 0; };
 
   unless ($config->{'rrdfile'}) {
@@ -85,6 +93,12 @@ sub parse_args {
     }
   } elsif ($config->{'mode'} ne 'init') {
     print "Valid mode not defined!\n";
+    printhelp();
+    return 0;
+  }
+
+  if ($config->{'graphdays'} <= 0) {
+    print "Days must be greater than zero\n";
     printhelp();
     return 0;
   }
@@ -221,8 +235,8 @@ sub main {
                           ,legend => 'IMu sessions'
                           }
                 ,vertical_label => 'Users'
-                #,start => time() - 60480 * 8
-                #,end => time()
+                ,start => time() - 3600 * 24 * $config{graphdays}
+                ,end => time()
                );
   } elsif ($config{'mode'} eq 'init') {
     # No special code actually needed because of second arg to open_rrd
