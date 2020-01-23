@@ -1,3 +1,9 @@
+emulicstatus (0.4) unstable; urgency=medium
+
+  * Support graphing multiple days 
+
+ -- Will Aoki <waoki@umnh.utah.edu>  Thu, 23 Jan 2020 13:46:41 -0700
+
 emulicstatus (0.3) unstable; urgency=medium
 
   * Initialize empty RRD, and clean it up on purge 
