@@ -23,14 +23,14 @@ subtest 'RRD with default mode' => sub {
   my $ret;
   combined_is(sub{$ret = App::EMuLicStatus::parse_args($config, '--rrdfile', '/tmp/asdf.rrd')}, '', 'No output');
   is($ret, 1, 'Valid parse reported');
-  is($config->{'mode'}, 'init', 'Default 1 correct');
+  is($config->{'mode'}, 'init', 'Mode correctly set when default is init');
   is($config->{'rrdfile'}, '/tmp/asdf.rrd', 'RRD argument parsed');
 
   $config = {};
   $config->{'mode'} = 'graph';
   combined_is(sub{$ret = App::EMuLicStatus::parse_args($config, '--rrdfile', '/tmp/asdf.rrd', '--graph-to', '/tmp/graph.png')}, '', 'No output');
   is($ret, 1, 'Valid parse reported');
-  is($config->{'mode'}, 'graph', 'Default 2 correct');
+  is($config->{'mode'}, 'graph', 'Mode correctly set when default is graph');
 };
 
 subtest 'Mode init ok' => sub {
