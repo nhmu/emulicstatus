@@ -91,17 +91,17 @@ sub parse_args {
       printhelp();
       return 0;
     }
+    if ($config->{'graphdays'} <= 0) {
+      print "Days to graph must be greater than zero\n";
+      printhelp();
+      return 0;
+    }
   } elsif ($config->{'mode'} ne 'init') {
     print "Valid mode not defined!\n";
     printhelp();
     return 0;
   }
 
-  if ($config->{'graphdays'} <= 0) {
-    print "Days must be greater than zero\n";
-    printhelp();
-    return 0;
-  }
 
   return 1;
 }
